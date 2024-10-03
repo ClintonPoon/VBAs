@@ -1,0 +1,61 @@
+# Define the folder path containing the Excel files
+$folderPath = "C:\Users\clintonpoongavanam\OneDrive - CoActivate\CoActivate Dialler\Telkom_Mobile\OBCC_PostVet\Download\Vendor_Resolution_Files"
+
+# Create a new Excel COM object
+$excel = New-Object -ComObject Excel.Application
+$excel.Visible = $false
+$excel.DisplayAlerts = $false
+
+# Create a new workbook to store copied data
+$destinationWorkbook = $excel.Workbooks.Add()
+$destinationSheet = $destinationWorkbook.Sheets.Item(1)
+
+# Counter for row placement in the destination sheet
+$rowCounter = 400000
+
+# Get all Excel files in the folder
+$excelFiles = Get-ChildItem -Path $folderPath -Filter "*.xlsx"
+
+foreach ($file in $excelFiles) {
+    Write-Host "Processing file: $($file.FullName)"
+
+    # Open each workbook
+    $workbook = $excel.Workbooks.Open($file.FullName)
+
+    foreach ($sheet in $workbook.Sheets) {
+        Write-Host "Processing sheet: $($sheet.Name)"
+
+        # Get the used range of the sheet
+        $usedRange = $sheet.UsedRange
+
+        # Get the number of rows and columns in the sheet
+        $rowCount = $usedRange.Rows.Count
+        $columnCount = $usedRange.Columns.Count
+
+        # Copy data from the current sheet to the destination sheet
+        $data = $usedRange.Value2
+        for ($i = 1; $i -le $rowCount; $i++) {
+            for ($j = 1; $j -le $columnCount; $j++) {
+                # Copy cell values from the current sheet to the destination sheet
+                $destinationSheet.Cells.Item($rowCounter, $j).Value2 = $data[$i, $j]
+            }
+            $rowCounter++
+        }
+    }
+
+    # Close the workbook after processing
+    $workbook.Close($false)
+}
+Write-Host "RowCounter: $rowCounter, j: $j"
+# Save the destination workbook
+$destinationFilePath = "C:\Users\clintonpoongavanam\OneDrive - CoActivate\CoActivate Dialler\Telkom_Mobile\OBCC_PostVet\Download\Vendor_Resolution_Files\CombinedData1.xlsx"
+$destinationWorkbook.SaveAs($destinationFilePath)
+
+# Clean up the Excel COM object
+$excel.Quit()
+
+# Release COM objects to avoid memory leaks
+[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel)
+[System.GC]::Collect()
+
+Write-Host "All data copied to: $destinationFilePath"
